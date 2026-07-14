@@ -1,35 +1,51 @@
-# Task 5: Chat Application - Advanced Tier
-### Oasis Infobyte Internship Program
+import socket
+import threading
+import tkinter as tk
+from tkinter import scrolledtext
 
-## Project Description:
-Advanced Real-time Chat Application with GUI using Python Tkinter and Socket Programming.
-Supports multiple clients, timestamps, and live server log.
+HOST = '127.0.0.1'
+PORT = 12345
 
-## Features:
-- GUI Interface: Tkinter based chat window
-- Multi-client Support: Multiple users can chat at once
-- Timestamps: Every message shows time
-- Online Users: Server shows who connected
-- Broadcast Messages: Message goes to all connected clients
-- Threading: Send and Receive simultaneously
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect((HOST, PORT))
 
-## How to Run:
-1. Install Python 3.x. No extra pip install needed
-2. Open Terminal
-3. PS C:\Users\mulla\OneDrive\Desktop\Oasis-Internship\Python-Task5-ChatApplication>
-Step 1: Run Server
-python Task5_server.py
+def receive():
+    while True:
+        try:
+            message = client.recv(1024).decode('utf-8')
+            if message == 'NAME':
+                client.send(name_var.get().encode('utf-8'))
+            else:
+                chat_box.insert(tk.END, message + '\n')
+        except:
+            chat_box.insert(tk.END, "Disconnected from server\n")
+            client.close()
+            break
 
-Step 2: Run Client
-python Task5_client.py
-Enter your name and start chatting
+def send():
+    message = msg_entry.get()
+    if message:
+        client.send(message.encode('utf-8'))
+        msg_entry.delete(0, tk.END)
 
-Step 3: Open multiple client windows to test
+# GUI
+window = tk.Tk()
+window.title("Client - Chat App Advanced")
+window.geometry("500x400")
 
-## Technologies Used:
-- Python 3.x
-- tkinter, socket, threading, datetime
+name_var = tk.StringVar()
+tk.Label(window, text="Enter Name:").pack()
+tk.Entry(window, textvariable=name_var).pack()
 
-## Server Details:
-- Host: 127.0.0.1
-- Port: 12345
+chat_box = scrolledtext.ScrolledText(window)
+chat_box.pack(padx=20, pady=10)
+
+msg_entry = tk.Entry(window)
+msg_entry.pack(pady=5)
+tk.Button(window, text="Send", command=send).pack()
+
+thread = threading.Thread(target=receive)
+thread.daemon = True
+thread.start()
+
+window.mainloop()
